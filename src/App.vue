@@ -42,7 +42,7 @@ export default {
   methods: {
     // Подключение к WebSocket
     connectWebSocket () {
-      this.ws = new WebSocket('wss://4cb8-195-189-33-9.ngrok-free.app')
+      this.ws = new WebSocket('wss://3214-195-189-33-9.ngrok-free.app')
 
       this.ws.onopen = () => {
         this.message = 'Connected to the game!'
@@ -139,7 +139,7 @@ ul {
   margin: 5px 0;
   padding: 10px;
   border-radius: 10px;
-  color: white; /* Цвет текста */
+  color: black; /* Цвет текста */
   text-align: center;
   width: 100%; /* Ширина списка */
 }
