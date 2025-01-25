@@ -1,102 +1,75 @@
+// Frontend (Vue.js)
 <template>
   <div id="app">
-    <h1>Guess the Number</h1>
-    <p>Guess a number between 1 and 100</p>
-    <input type="number" v-model.number="guess" placeholder="Enter your guess" />
-    <button @click="sendGuess" :disabled="gameOver">Guess</button>
-    <button @click="resetGame">Reset</button>
-
-    <p v-if="message" class="message">{{ message }}</p>
-
-    <h2>Guess History</h2>
-    <ul>
-      <li
-        v-for="(item, index) in sortedGuesses"
+    <h1>Tic Tac Toe</h1>
+    <div class="board">
+      <div
+        v-for="(cell, index) in board"
         :key="index"
-        :style="{ backgroundColor: getColor(item.difference) }"
-        class="guess-item"
+        class="cell"
+        :class="{ 'cell-x': cell === 'X', 'cell-o': cell === 'O' }"
+        @click="makeMove(index)"
       >
-        {{ item.number }}
-      </li>
-    </ul>
+        {{ cell }}
+      </div>
+    </div>
+    <p v-if="message" class="message">{{ message }}</p>
+    <button @click="resetGame">Reset</button>
   </div>
 </template>
 
 <script>
 export default {
-  data () {
+  data() {
     return {
-      ws: null, // WebSocket-соединение
-      guess: null, // Текущая попытка игрока
-      message: '', // Сообщения для игрока
-      gameOver: false, // Флаг окончания игры
-      guesses: [] // История всех попыток
-    }
-  },
-  computed: {
-    // Сортировка попыток от ближайшей к дальней
-    sortedGuesses () {
-      return this.guesses.slice().sort((a, b) => a.difference - b.difference)
-    }
+      ws: null, // WebSocket connection
+      board: Array(9).fill(null), // Game board
+      playerSymbol: '', // Player's symbol ('X' or 'O')
+      message: '', // Game message
+    };
   },
   methods: {
-    // Подключение к WebSocket
-    connectWebSocket () {
-      this.ws = new WebSocket('wss://3214-195-189-33-9.ngrok-free.app')
+    connectWebSocket() {
+      this.ws = new WebSocket('wss://fbbb-195-189-33-9.ngrok-free.app ');
 
       this.ws.onopen = () => {
-        this.message = 'Connected to the game!'
-      }
+        this.message = 'Connected to the game!';
+      };
 
       this.ws.onmessage = (event) => {
-        const data = JSON.parse(event.data)
+        const data = JSON.parse(event.data);
 
-        if (data.type === 'winner') {
-          this.message = `Player guessed the number ${data.guess}! Game Over.`
-          this.gameOver = true
-        } else if (data.type === 'update-history') {
-          this.guesses = data.guesses // Обновляем историю
+        if (data.type === 'assign-symbol') {
+          this.playerSymbol = data.symbol;
+          this.message = `You are player ${data.symbol}`;
+        } else if (data.type === 'update-board') {
+          this.board = data.board;
+          this.message = data.message;
         } else if (data.type === 'reset') {
-          this.message = data.message
-          this.guesses = [] // Очищаем историю
-          this.gameOver = false
+          this.board = Array(9).fill(null);
+          this.message = data.message;
         }
-      }
+      };
 
       this.ws.onclose = () => {
-        this.message = 'Disconnected from the server.'
+        this.message = 'Disconnected from the server.';
+      };
+    },
+    makeMove(index) {
+      if (this.ws && this.board[index] === null && this.playerSymbol) {
+        this.ws.send(JSON.stringify({ type: 'make-move', index, symbol: this.playerSymbol }));
       }
     },
-    // Отправка попытки игрока
-    sendGuess () {
-      if (this.ws && this.guess !== null && !this.gameOver) {
-        this.ws.send(JSON.stringify({ type: 'guess', guess: this.guess }))
-        this.guess = null
-      }
-    },
-    // Генерация цвета на основе разницы
-    getColor (difference) {
-      if (difference === 0) {
-        return 'green' // Угадано
-      } else if (difference <= 10) {
-        return 'lightgreen' // Очень близко
-      } else if (difference <= 30) {
-        return 'yellow' // Средняя дистанция
-      } else {
-        return 'red' // Очень далеко
-      }
-    },
-    // Сброс игры
-    resetGame () {
+    resetGame() {
       if (this.ws) {
-        this.ws.send(JSON.stringify({ type: 'reset' })) // Отправляем сброс на сервер
+        this.ws.send(JSON.stringify({ type: 'reset' }));
       }
-    }
+    },
   },
-  mounted () {
-    this.connectWebSocket()
-  }
-}
+  mounted() {
+    this.connectWebSocket();
+  },
+};
 </script>
 
 <style scoped>
@@ -104,43 +77,31 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   text-align: center;
   margin-top: 40px;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 20px;
 }
-
-input {
-  padding: 10px;
-  font-size: 16px;
-  width: 150px;
-  margin-bottom: 20px;
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-gap: 5px;
+  margin: 20px auto;
 }
-
-button {
-  padding: 10px 20px;
-  font-size: 16px;
+.cell {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid black;
+  font-size: 24px;
   cursor: pointer;
-  margin: 5px;
 }
-
+.cell-x {
+  color: red;
+}
+.cell-o {
+  color: blue;
+}
 .message {
-  margin-top: 20px;
   font-size: 18px;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.guess-item {
-  font-size: 16px;
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 10px;
-  color: black; /* Цвет текста */
-  text-align: center;
-  width: 100%; /* Ширина списка */
+  margin-top: 20px;
 }
 </style>
