@@ -30,7 +30,7 @@ export default {
   },
   methods: {
     connectWebSocket() {
-      this.ws = new WebSocket('wss://fbbb-195-189-33-9.ngrok-free.app ');
+      this.ws = new WebSocket('wss://81ac-195-189-33-9.ngrok-free.app');
 
       this.ws.onopen = () => {
         this.message = 'Connected to the game!';
